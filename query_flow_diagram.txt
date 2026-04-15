@@ -1,0 +1,89 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                        BROWSER (frontend/)                       │
+│                                                                   │
+│  index.html                                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  Sidebar                    │  Chat Area                 │    │
+│  │  - Course list              │  - Message history         │    │
+│  │  - Suggested questions      │  - Text input + Send btn   │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                   │
+│  script.js                                                        │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  1. User submits message                                  │   │
+│  │  2. Attach/create session_id                              │   │
+│  │  3. POST /api/query  { query, session_id }                │   │
+│  │  4. Render response markdown + sources                    │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │  HTTP (JSON)
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     FASTAPI  app.py                              │
+│                                                                   │
+│  POST /api/query                GET /api/courses                 │
+│  - Validate request             - Return course count            │
+│  - Create session if needed       & titles                       │
+│  - Call rag_system.query()                                       │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    RAG SYSTEM  rag_system.py                     │
+│                                                                   │
+│  1. Fetch conversation history (session_manager)                 │
+│  2. Call ai_generator.generate_response()                        │
+│  3. Retrieve sources from tool_manager                           │
+│  4. Save exchange to session_manager                             │
+└──────┬──────────────────────────────────┬────────────────────────┘
+       │                                  │
+       ▼                                  ▼
+┌─────────────────┐            ┌──────────────────────┐
+│ SESSION MANAGER │            │   AI GENERATOR        │
+│ session_manager │            │   ai_generator.py     │
+│                 │            │                       │
+│ - Stores last 2 │            │  ┌─────────────────┐ │
+│   exchanges per │            │  │  1st API Call   │ │
+│   session_id    │            │  │  Claude + tools │ │
+│                 │            │  └────────┬────────┘ │
+└─────────────────┘            │           │           │
+                               │    tool_use?          │
+                               │     ┌─────┴──────┐   │
+                               │    YES           NO  │
+                               │     ▼             ▼  │
+                               │  ┌──────┐    return  │
+                               │  │TOOLS │    text    │
+                               │  └──┬───┘            │
+                               │     │                 │
+                               │  ┌──▼─────────────┐  │
+                               │  │  2nd API Call  │  │
+                               │  │  synthesize    │  │
+                               │  │  tool results  │  │
+                               │  └────────────────┘  │
+                               └──────────┬────────────┘
+                                          │
+                                          ▼
+                               ┌──────────────────────┐
+                               │    TOOL MANAGER       │
+                               │    search_tools.py    │
+                               │                       │
+                               │  search_course_       │
+                               │  content(query,       │
+                               │  course_name?,        │
+                               │  lesson_number?)      │
+                               └──────────┬────────────┘
+                                          │
+                                          ▼
+                               ┌──────────────────────┐
+                               │    VECTOR STORE       │
+                               │    vector_store.py    │
+                               │                       │
+                               │  ┌────────────────┐  │
+                               │  │ course_catalog │  │ ◄── semantic course
+                               │  │  (ChromaDB)    │  │     name resolution
+                               │  └────────────────┘  │
+                               │  ┌────────────────┐  │
+                               │  │ course_content │  │ ◄── top-5 chunk
+                               │  │  (ChromaDB)    │  │     similarity search
+                               │  └────────────────┘  │
+                               └──────────────────────┘
