@@ -143,7 +143,7 @@ def create_generator(config):
     if provider == "anthropic":
         return AIGenerator(config.ANTHROPIC_API_KEY, config.ANTHROPIC_MODEL)
     if provider == "ollama":
-        return OllamaGenerator(config.OLLAMA_MODEL, config.OLLAMA_BASE_URL)
+        return OllamaGenerator(config.OLLAMA_MODEL, config.OLLAMA_BASE_URL, debug=config.DEBUG_RAG)
     raise ValueError(
         f"Unknown provider '{config.PROVIDER}'. Set PROVIDER to 'anthropic' or 'ollama'."
     )

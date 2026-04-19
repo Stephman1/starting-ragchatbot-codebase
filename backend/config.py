@@ -24,6 +24,9 @@ class Config:
     # Database paths
     CHROMA_PATH: str = "./chroma_db"  # ChromaDB storage location
 
+    # Debug mode — set DEBUG_RAG=true in .env to enable verbose pipeline tracing
+    DEBUG_RAG: bool = os.getenv("DEBUG_RAG", "false").lower() == "true"
+
     # Provider selection: "anthropic" | "ollama"
     PROVIDER: str = os.getenv("PROVIDER", "anthropic")
 

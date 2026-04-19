@@ -204,6 +204,14 @@ class VectorStore:
             print(f"Error getting existing course titles: {e}")
             return []
     
+    def get_content_count(self) -> int:
+        """Get total number of content chunks in the vector store"""
+        try:
+            return self.course_content.count()
+        except Exception as e:
+            print(f"Error getting content count: {e}")
+            return 0
+
     def get_course_count(self) -> int:
         """Get the total number of courses in the vector store"""
         try:

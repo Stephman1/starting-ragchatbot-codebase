@@ -1,6 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore", message="resource_tracker: There appear to be.*")
 
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -30,6 +31,15 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Configure debug logging
+if config.DEBUG_RAG:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("[%(levelname)s] %(name)s: %(message)s"))
+    rag_logger = logging.getLogger("rag")
+    rag_logger.setLevel(logging.DEBUG)
+    rag_logger.addHandler(handler)
+    print("[RAG DEBUG] Debug mode enabled — verbose pipeline tracing is ON")
 
 # Initialize RAG system
 rag_system = RAGSystem(config)
@@ -93,9 +103,14 @@ async def startup_event():
         print("Loading initial documents...")
         try:
             courses, chunks = rag_system.add_course_folder(docs_path, clear_existing=False)
-            print(f"Loaded {courses} courses with {chunks} chunks")
+            print(f"Loaded {courses} new courses with {chunks} new chunks")
         except Exception as e:
             print(f"Error loading documents: {e}")
+
+    # Always report what's actually indexed — helps confirm chunks exist
+    total_courses = rag_system.vector_store.get_course_count()
+    total_chunks = rag_system.vector_store.get_content_count()
+    print(f"Vector store: {total_courses} courses, {total_chunks} chunks indexed")
 
 # Custom static file handler with no-cache headers for development
 from fastapi.staticfiles import StaticFiles
