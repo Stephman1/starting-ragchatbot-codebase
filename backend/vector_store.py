@@ -101,6 +101,8 @@ class VectorStore:
     
     def _resolve_course_name(self, course_name: str) -> Optional[str]:
         """Use vector search to find best matching course by name"""
+        if not isinstance(course_name, str):
+            return None
         try:
             results = self.course_catalog.query(
                 query_texts=[course_name],

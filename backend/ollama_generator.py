@@ -36,6 +36,22 @@ Provide only the direct answer to what was asked.
         self.model = model
 
     @staticmethod
+    def _sanitize_tool_args(args: Dict[str, Any]) -> Dict[str, Any]:
+        """Normalize args from local models that wrap scalar values as {'type': value}.
+
+        Some local Ollama models produce e.g. {"course_name": {"type": "MCP"}} instead
+        of {"course_name": "MCP"}.  Detect the pattern (single-key dict whose only key
+        is "type") and unwrap it so downstream code receives the plain scalar value.
+        """
+        result = {}
+        for key, value in args.items():
+            if isinstance(value, dict) and list(value.keys()) == ["type"]:
+                result[key] = value["type"]
+            else:
+                result[key] = value
+        return result
+
+    @staticmethod
     def _convert_tools(anthropic_tools: List[Dict]) -> List[Dict]:
         """Convert Anthropic tool format to OpenAI function-calling format."""
         return [
@@ -91,7 +107,7 @@ Provide only the direct answer to what was asked.
         messages.append(assistant_message)
 
         for tool_call in assistant_message.tool_calls:
-            args = json.loads(tool_call.function.arguments)
+            args = self._sanitize_tool_args(json.loads(tool_call.function.arguments))
             result = tool_manager.execute_tool(tool_call.function.name, **args)
             messages.append(
                 {"role": "tool", "tool_call_id": tool_call.id, "content": result}
