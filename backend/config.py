@@ -24,6 +24,13 @@ class Config:
     # Database paths
     CHROMA_PATH: str = "./chroma_db"  # ChromaDB storage location
 
+    # Provider selection: "anthropic" | "ollama"
+    PROVIDER: str = os.getenv("PROVIDER", "anthropic")
+
+    # Ollama settings
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2")
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+
 config = Config()
 
 

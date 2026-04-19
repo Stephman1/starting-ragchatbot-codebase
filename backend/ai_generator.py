@@ -133,3 +133,17 @@ Provide only the direct answer to what was asked.
         # Get final response
         final_response = self.client.messages.create(**final_params)
         return final_response.content[0].text
+
+
+def create_generator(config):
+    """Factory that returns AIGenerator or OllamaGenerator based on config.PROVIDER."""
+    from ollama_generator import OllamaGenerator  # local import avoids circular dep
+
+    provider = config.PROVIDER.lower()
+    if provider == "anthropic":
+        return AIGenerator(config.ANTHROPIC_API_KEY, config.ANTHROPIC_MODEL)
+    if provider == "ollama":
+        return OllamaGenerator(config.OLLAMA_MODEL, config.OLLAMA_BASE_URL)
+    raise ValueError(
+        f"Unknown provider '{config.PROVIDER}'. Set PROVIDER to 'anthropic' or 'ollama'."
+    )
